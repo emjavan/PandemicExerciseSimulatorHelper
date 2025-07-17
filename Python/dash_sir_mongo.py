@@ -7,7 +7,7 @@ import uuid
 
 # --- Initialize MongoDB ---
 client = MongoClient("mongodb://localhost:27017/")
-db = client["PES"]
+db = client["TestSIRCompare"]
 results_col = db["sir_results"]
 results_col.delete_many({})  # clear previous runs each app start
 
