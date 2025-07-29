@@ -3,6 +3,11 @@
 #' Set the folder paths appropriately for correct param sets
 #///////////////////////////////////////////////////////////////////////////////
 
+
+# Need to refactor this code to take in the option column names from figures
+# i.e. did I vary vaccination, was is R0 or travel. 
+# Need to generate figures in a robust way regardless of what params are varying
+
 #///////////////////////
 #### LOAD LIBRARIES ####
 #///////////////////////
@@ -70,8 +75,18 @@ extract_sim = function(filename) {
 #///////////////////////////
 # List all JSON files in folder
 fips = c("48113", "48453", "48201", "48141", "48375")
-dir_names_vect = c("NoTravel_WithinAgeGrpContactOnly_HighR0", "NoTravel_Mistry2021AllContact_HighR0", "Travel_Mistry2021AllContact_HighR0",
-                   "NoTravel_WithinAgeGrpContactOnly_LowR0",  "NoTravel_Mistry2021AllContact_LowR0",  "Travel_Mistry2021AllContact_LowR0")
+# parent_dir_name = "simulations_with_NPIs/"
+# dir_names_vect = c("NoTravel_WithinAgeGrpContactOnly_HighR0", "NoTravel_Mistry2021AllContact_HighR0", "Travel_Mistry2021AllContact_HighR0",
+#                    "NoTravel_WithinAgeGrpContactOnly_LowR0",  "NoTravel_Mistry2021AllContact_LowR0",  "Travel_Mistry2021AllContact_LowR0")
+
+parent_dir_name = "simulations_with_vax/"
+dir_names_vect = c("Travel_Mistry2021AllContact_HighR0_Lag0", "Travel_Mistry2021AllContact_HighR0_Lag14")
+
+fig_dir = paste0("../figures/", parent_dir_name)
+if(!dir.exists(fig_dir)){
+  dir.create(fig_dir)
+}
+
 summary_compare_df = data.frame()
 runtime_df = data.frame()
 for(i in 1:length(dir_names_vect)){
@@ -84,14 +99,18 @@ for(i in 1:length(dir_names_vect)){
   contact_param = dir_split[2]
   r0_param      = dir_split[3]
   
+  if(parent_dir_name == "simulations_with_vax/"){
+    vax_param = dir_split[4]
+  }
+  
   stochastic_json_files <- list.files(
-    path = paste0("../simulations_with_NPIs/", dir_name, "/OUTPUT_small_stochastic_min1"),
+    path = paste0("../", parent_dir_name, dir_name, "/OUTPUT_small_stochastic_min1"),
     pattern = "\\.json$",
     full.names = TRUE,
     recursive = TRUE
   )
   deterministic_json_files <- list.files(
-    path = paste0("../simulations_with_NPIs/", dir_name, "/OUTPUT_small_deterministic_min1"),
+    path = paste0("../", parent_dir_name, dir_name, "/OUTPUT_small_deterministic_min1"),
     pattern = "OUTPUT_small_deterministic_\\d+\\.json$",
     full.names = TRUE
   )
@@ -168,7 +187,7 @@ for(i in 1:length(dir_names_vect)){
     theme_bw(base_size=25)
   
   ggsave(
-    paste0("../figures/simulations_with_NPIs/susceptible_plt_", dir_name, ".png"),
+    paste0(fig_dir, "susceptible_plt_", dir_name, ".png"),
     sus_plt,
     height=8, width=9, units="in", bg="white"
   )
@@ -186,7 +205,7 @@ for(i in 1:length(dir_names_vect)){
     theme_bw(base_size=25)
   
   ggsave(
-    paste0("../figures/simulations_with_NPIs/infect_asymp_plt_", dir_name, ".png"),
+    paste0(fig_dir, "infect_asymp_plt_", dir_name, ".png"),
     inf_a_plt,
     height=8, width=9, units="in", bg="white"
   )
@@ -204,7 +223,7 @@ for(i in 1:length(dir_names_vect)){
     theme_bw(base_size=25)
   
   ggsave(
-    paste0("../figures/simulations_with_NPIs/recovered_plt_", dir_name, ".png"),
+    paste0(fig_dir, "recovered_plt_", dir_name, ".png"),
     reco_plt,
     height=8, width=9, units="in", bg="white"
   )
@@ -222,7 +241,7 @@ for(i in 1:length(dir_names_vect)){
     theme_bw(base_size=25)
   
   ggsave(
-    paste0("../figures/simulations_with_NPIs/deceased_plt_", dir_name, ".png"),
+    paste0(fig_dir, "deceased_plt_", dir_name, ".png"),
     dead_plt,
     height=8, width=9, units="in", bg="white"
   )
@@ -244,7 +263,7 @@ for(i in 1:length(dir_names_vect)){
       nrow=2, align = "v", axis = "lr", rel_heights = c(0.9, 1))
   
   ggsave(
-    paste0("../figures/simulations_with_NPIs/combo_plt_", dir_name, ".png"),
+    paste0(fig_dir, "combo_plt_", dir_name, ".png"),
     combo_plot,
     height=8, width=12, units="in", bg="white"
   )
@@ -291,7 +310,7 @@ for(i in 1:length(dir_names_vect)){
     cowplot::plot_grid(stochastic_plot, det_plot, 
                        ncol=1, align = "v", axis = "lr")
   ggsave(
-    paste0("../figures/simulations_with_NPIs/exposed_compare_plot_", dir_name, ".png"),
+    paste0(fig_dir, "exposed_compare_plot_", dir_name, ".png"),
     final_exposed_compare_plt,
     height=8, width=9, units="in", bg="white"
   )
@@ -357,7 +376,7 @@ for(i in 1:length(dir_names_vect)){
   } # end if travel was used in model
   
   ggsave(
-    filename = paste0("../figures/simulations_with_NPIs/recovered_county_map_", dir_name, ".png"),
+    filename = paste0(fig_dir, "recovered_county_map_", dir_name, ".png"),
     plot = county_reco_map,
     bg = "white", 
     width = 6, height = 5, units = "in", dpi = 600
@@ -419,7 +438,7 @@ for(i in 1:length(dir_names_vect)){
   #### RUNTIMES ####
   #/////////////////
   single_runtime_df = 
-    read_csv(paste0("../simulations_with_NPIs/", dir_name, "/sim_runtime_stats.csv")) %>%
+    read_csv(paste0("../", parent_dir_name, dir_name, "/sim_runtime_stats.csv")) %>%
     rename(SIM_ID = sim,
            SIM_TYPE = model,
            RUNTIME_SEC = time_sec
